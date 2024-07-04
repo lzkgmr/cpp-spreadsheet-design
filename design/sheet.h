@@ -4,10 +4,15 @@
 #include "common.h"
 
 #include <functional>
+#include <unordered_map>
+#include <algorithm>
+#include <functional>
+#include <iostream>
+#include <optional>
 
 class Sheet : public SheetInterface {
 public:
-    ~Sheet();
+    ~Sheet() override = default;
 
     void SetCell(Position pos, std::string text) override;
 
@@ -21,14 +26,17 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    const Cell* GetConcreteCell(Position pos) const;
-    Cell* GetConcreteCell(Position pos);
-
 private:
-    void MaybeIncreaseSizeToIncludePosition(Position pos);
-    void PrintCells(std::ostream& output,
-                    const std::function<void(const CellInterface&)>& printCell) const;
-    Size GetActualSize() const;
-
-    std::vector<std::vector<std::unique_ptr<Cell>>> cells_;
+    struct PosHasher {
+        size_t operator()(const Position &pos) const {
+            return pos.row + pos.col * 43;
+        }
+    };
+    
+    static void CheckPositionValidity(Position pos);
+    
+    void UpdateSize(); 
+    
+    std::unordered_map<Position, std::unique_ptr<Cell>, PosHasher> sheet_;
+    Size size_ = {0, 0};
 };
